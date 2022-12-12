@@ -1,0 +1,16 @@
+# This example is from day 1
+# Letters of the initial board
+
+FBOUE
+G I U
+LSOOM
+G E L
+OEMNA
+
+# Colors of the initial board. 'G' is green, 'Y' is yellow, '.' is gray.
+
+G..GG
+. . .
+GYGYY
+. Y .
+GYY.G

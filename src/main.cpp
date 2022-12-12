@@ -68,7 +68,7 @@ bool is_consistent() {
             }
             default:
                 assert(false);
-            };
+            }
         }
     }
 

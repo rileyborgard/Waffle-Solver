@@ -23,6 +23,8 @@ std::vector<std::string> type = {
     "2H2H2",
 };
 
+int grid[5][5];
+
 bool is_consistent() {
     // consistent with colors
     for(int i = 0; i < 5; i++) {
@@ -150,6 +152,80 @@ bool solve() {
     return false;
 }
 
+std::vector<std::pair<int, int>> min_swaps() {
+    // For each letter, store the grid positions where it occurs in the input and output configurations
+    std::vector<std::vector<int>> input(26), output(26);
+    int ngrid = 0;
+    for(int i = 0; i < 5; i++) {
+        for(int j = 0; j < 5; j++) {
+            if(letters[i][j] == ' ') continue;
+            ngrid = std::max(ngrid, grid[i][j]);
+            if(colors[i][j] == 'G') continue;
+            input[letters[i][j] - 'A'].push_back(grid[i][j]);
+            output[solution[i][j] - 'A'].push_back(grid[i][j]);
+        }
+    }
+
+    // For each letter, there is a mapping from its input positions to its output positions
+    // We will iterate over all combinations of them with brute force
+    std::vector<std::vector<int>> perm(26);
+    for(int c = 0; c < 26; c++) {
+        perm[c].resize(input[c].size());
+        assert(input[c].size() == output[c].size());
+        for(int i = 0; i < (int) perm[c].size(); i++) {
+            perm[c][i] = i;
+        }
+    }
+
+    // Iterate through all permutations that move the letters correctly
+    // Save the one with the fewest cycles, that is the one that requires the fewest swaps
+    std::vector<bool> vis(26);
+    std::vector<int> p(ngrid, -1);
+    int maxcyc = -1;
+    std::vector<int> bestp(ngrid, -1);
+    while(true) {
+        std::fill(vis.begin(), vis.end(), false);
+        for(int c = 0; c < 26; c++) {
+            for(int i = 0; i < (int) perm[c].size(); i++) {
+                p[input[c][i]] = output[c][perm[c][i]];
+            }
+        }
+        int cyc = 0;
+        for(int i = 0; i < ngrid; i++) {
+            if(p[i] == -1 || vis[i]) continue;
+            cyc++;
+            int x = i;
+            do {
+                vis[x] = true;
+                x = p[x];
+            }while(x != i);
+        }
+        if(cyc > maxcyc) {
+            maxcyc = cyc;
+            bestp = p;
+        }
+        int c = 0;
+        while(c < 26 && !std::next_permutation(perm[c].begin(), perm[c].end())) c++;
+        if(c == 26) break;
+    }
+
+    // Create the sequence of swaps based on the best permutation
+    std::vector<std::pair<int, int>> ans;
+    std::fill(vis.begin(), vis.end(), false);
+    for(int i = 0; i < ngrid; i++) {
+        if(bestp[i] == -1 || vis[i]) continue;
+        int x = i;
+        do {
+            if(x != i) {
+                ans.push_back({i, x});
+            }
+            vis[x] = true;
+            x = bestp[x];
+        }while(x != i);
+    }
+    return ans;
+}
+
 int main() {
     // Read dictionary of valid words, only include ones that are 5 letters
     std::ifstream dict_in("res/words5.txt");
@@ -212,6 +288,26 @@ int main() {
     for(int i = 0; i < 5; i++) {
         std::cout << solution[i] << '\n';
     }
+    std::cout << std::endl;
 
-    // TODO: find the optimal swaps to make for 5 stars
+    int index = 1;
+    for(int i = 0; i < 5; i++) {
+        for(int j = 0; j < 5; j++) {
+            if(solution[i][j] == ' ') {
+                std::cout << "   ";
+            }else {
+                grid[i][j] = index++;
+                std::cout << grid[i][j] / 10 << grid[i][j] % 10 << ' ';
+            }
+        }
+        std::cout << '\n';
+    }
+    std::cout << std::endl;
+
+    std::vector<std::pair<int, int>> swaps = min_swaps();
+
+    std::cout << "Swaps:\n";
+    for(auto &pa : swaps) {
+        std::cout << pa.first << ' ' << pa.second << '\n';
+    }
 }

@@ -6,4 +6,4 @@
 
 To compile, run `make`, which creates an executable `waffle`
 
-To use this program, create a text file with a similar format to `res/puzzle.txt` and run the program with the puzzle as standard input. For example, `./waffle < ./res/puzzle.txt` will solve the example puzzle.
+To use this program, create a text file with a similar format to `res/day1.txt` and run the program with the puzzle as standard input. For example, `./waffle < ./res/day1.txt` will solve the example puzzle.

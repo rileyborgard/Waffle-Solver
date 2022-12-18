@@ -1,3 +1,5 @@
+5
+
 # This example is from day 1
 # Letters of the initial board
 

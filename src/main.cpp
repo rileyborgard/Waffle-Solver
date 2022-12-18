@@ -13,22 +13,19 @@ std::vector<std::string> letters, colors;
 
 std::vector<std::string> solution;
 std::array<int, 26> counts;
+int n;
 
 // Determine whether a cell is present in a horizontal word (H), vertical word (V), or both (2)
-std::vector<std::string> type = {
-    "2H2H2",
-    "V V V",
-    "2H2H2",
-    "V V V",
-    "2H2H2",
-};
+char type(int i, int j) {
+    return "2HV "[((i & 1) << 1) | (j & 1)];
+}
 
-int grid[5][5];
+std::vector<std::vector<int>> grid;
 
 bool is_consistent() {
     // consistent with colors
-    for(int i = 0; i < 5; i++) {
-        for(int j = 0; j < 5; j++) {
+    for(int i = 0; i < n; i++) {
+        for(int j = 0; j < n; j++) {
             if(letters[i][j] == ' ') continue;
             switch(colors[i][j]) {
             case 'G': {
@@ -44,12 +41,12 @@ bool is_consistent() {
                 }
                 // We need at least one letter in a shared word to be letters[i][j]
                 bool found = false;
-                for(int r = 0; r < 5; r++) {
-                    if ((type[i][j] == 'V' || type[i][j] == '2') && solution[r][j] == letters[i][j] || solution[r][j] == '*') {
+                for(int r = 0; r < n; r++) {
+                    if ((type(i, j) == 'V' || type(i, j) == '2') && solution[r][j] == letters[i][j] || solution[r][j] == '*') {
                         found = true;
                         break;
                     }
-                    if ((type[i][j] == 'H' || type[i][j] == '2') && solution[i][r] == letters[i][j] || solution[i][r] == '*') {
+                    if ((type(i, j) == 'H' || type(i, j) == '2') && solution[i][r] == letters[i][j] || solution[i][r] == '*') {
                         found = true;
                         break;
                     }
@@ -76,14 +73,14 @@ bool is_consistent() {
 
     // consistent with letter set
     std::fill(counts.begin(), counts.end(), 0);
-    for(int i = 0; i < 5; i++) {
-        for(int j = 0; j < 5; j++) {
+    for(int i = 0; i < n; i++) {
+        for(int j = 0; j < n; j++) {
             if(letters[i][j] == ' ') continue;
             counts[letters[i][j] - 'A']++;
         }
     }
-    for(int i = 0; i < 5; i++) {
-        for(int j = 0; j < 5; j++) {
+    for(int i = 0; i < n; i++) {
+        for(int j = 0; j < n; j++) {
             if(letters[i][j] == ' ' || solution[i][j] == '*') continue;
             if(--counts[solution[i][j] - 'A'] < 0) {
                 return false;
@@ -92,12 +89,12 @@ bool is_consistent() {
     }
 
     // consistent with dictionary
-    std::string temp(5, '*');
-    for(int r = 0; r < 5; r += 2) {
+    std::string temp(n, '*');
+    for(int r = 0; r < n; r += 2) {
         if(set.count(solution[r]) == 0) {
             return false;
         }
-        for(int i = 0; i < 5; i++) {
+        for(int i = 0; i < n; i++) {
             temp[i] = solution[i][r];
         }
         if(set.count(temp) == 0) {
@@ -112,8 +109,8 @@ bool is_consistent() {
 bool solve() {
     int best_options = INT_MAX;
     int best_i = -1, best_j = -1;
-    for(int i = 0; i < 5; i++) {
-        for(int j = 0; j < 5; j++) {
+    for(int i = 0; i < n; i++) {
+        for(int j = 0; j < n; j++) {
             if(letters[i][j] == ' ' || solution[i][j] != '*') continue;
             int options = 0;
             for(char c = 'A'; c <= 'Z'; c++) {
@@ -156,8 +153,8 @@ std::vector<std::pair<int, int>> min_swaps() {
     // For each letter, store the grid positions where it occurs in the input and output configurations
     std::vector<std::vector<int>> input(26), output(26);
     int ngrid = 0;
-    for(int i = 0; i < 5; i++) {
-        for(int j = 0; j < 5; j++) {
+    for(int i = 0; i < n; i++) {
+        for(int j = 0; j < n; j++) {
             if(letters[i][j] == ' ') continue;
             ngrid = std::max(ngrid, grid[i][j]);
             if(colors[i][j] == 'G') continue;
@@ -165,6 +162,7 @@ std::vector<std::pair<int, int>> min_swaps() {
             output[solution[i][j] - 'A'].push_back(grid[i][j]);
         }
     }
+    ngrid++;
 
     // For each letter, there is a mapping from its input positions to its output positions
     // We will iterate over all combinations of them with brute force
@@ -183,7 +181,7 @@ std::vector<std::pair<int, int>> min_swaps() {
     std::vector<int> p(ngrid, -1);
     int maxcyc = -1;
     std::vector<int> bestp(ngrid, -1);
-    while(true) {
+    for(int iter = 0; ; iter++) {
         std::fill(vis.begin(), vis.end(), false);
         for(int c = 0; c < 26; c++) {
             for(int i = 0; i < (int) perm[c].size(); i++) {
@@ -227,11 +225,14 @@ std::vector<std::pair<int, int>> min_swaps() {
 }
 
 int main() {
-    // Read dictionary of valid words, only include ones that are 5 letters
-    std::ifstream dict_in("res/words5.txt");
+    std::cin >> n;
+
+    // Read dictionary of valid words, only include ones that are n letters
+    std::cout << "Reading dictionary..." << std::endl;
+    std::ifstream dict_in("res/words.txt");
     std::string line;
     while(std::getline(dict_in, line)) {
-        if(line.length() != 5) continue;
+        if(line.length() != n) continue;
         for(char &c : line) {
             c = toupper(c);
             assert(c >= 'A' && c <= 'Z');
@@ -239,12 +240,14 @@ int main() {
         dict.push_back(line);
     }
     dict_in.close();
+    std::cout << "Dictionary size: " << dict.size() << std::endl;
 
     // Preprocess dictionary so we can check if a word with wildcards exists
-    std::string temp(5, '*');
+    std::cout << "Preprocesing..." << std::endl;
+    std::string temp(n, '*');
     for(std::string& s : dict) {
-        for(int mask = 0; mask < (1 << 5); mask++) {
-            for(int i = 0; i < 5; i++) {
+        for(int mask = 0; mask < (1 << n); mask++) {
+            for(int i = 0; i < n; i++) {
                 if(mask >> i & 1) {
                     temp[i] = '*';
                 }else {
@@ -256,21 +259,22 @@ int main() {
     }
 
     // Read input puzzle
+    std::cout << "Reading puzzle input..." << '\n';
     while(std::getline(std::cin, line)) {
         if(line.empty() || line[0] == '#') continue;
-        assert(line.length() == 5);
-        if((int) letters.size() < 5) {
+        assert(line.length() == n);
+        if((int) letters.size() < n) {
             letters.push_back(line);
         }else {
             colors.push_back(line);
         }
     }
-    assert((int) letters.size() == 5);
-    assert((int) colors.size() == 5);
+    assert((int) letters.size() == n);
+    assert((int) colors.size() == n);
 
-    solution.assign(5, std::string(5, '*'));
-    for(int i = 0; i < 5; i++) {
-        for(int j = 0; j < 5; j++) {
+    solution.assign(n, std::string(n, '*'));
+    for(int i = 0; i < n; i++) {
+        for(int j = 0; j < n; j++) {
             if(colors[i][j] == 'G') {
                 solution[i][j] = letters[i][j];
             }else if(letters[i][j] == ' ') {
@@ -285,14 +289,16 @@ int main() {
     }
 
     std::cout << "Solution:\n";
-    for(int i = 0; i < 5; i++) {
+    for(int i = 0; i < n; i++) {
         std::cout << solution[i] << '\n';
     }
     std::cout << std::endl;
 
     int index = 1;
-    for(int i = 0; i < 5; i++) {
-        for(int j = 0; j < 5; j++) {
+    grid.resize(n);
+    for(int i = 0; i < n; i++) {
+        grid[i].assign(n, -1);
+        for(int j = 0; j < n; j++) {
             if(solution[i][j] == ' ') {
                 std::cout << "   ";
             }else {
@@ -307,7 +313,8 @@ int main() {
     std::vector<std::pair<int, int>> swaps = min_swaps();
 
     std::cout << "Swaps:\n";
+    int iSwap = 1;
     for(auto &pa : swaps) {
-        std::cout << pa.first << ' ' << pa.second << '\n';
+        std::cout << iSwap++ << ":\t" << pa.first << ' ' << pa.second << '\n';
     }
 }
